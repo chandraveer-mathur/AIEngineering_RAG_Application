@@ -4,3 +4,4 @@ chromadb
 numpy
 transformers 
 python-dotenv
+ollama

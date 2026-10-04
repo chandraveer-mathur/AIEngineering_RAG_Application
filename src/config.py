@@ -29,6 +29,11 @@ TARGET_TOKENS = int(
     )
 )
 
+MODEL_NAME = os.getenv(
+    "LLM",
+    "qwen2.5:3b",
+)
+
 if not PDF_PATH:
     raise ValueError(
         "PDF_PATH is missing from .env"
