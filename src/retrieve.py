@@ -51,7 +51,6 @@ def retrieve(
         ],
         n_results=top_k,
     )
-
     return results
 
 # --------------------------------------------------
