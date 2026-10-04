@@ -45,16 +45,25 @@ def generate_answer(prompt):
     Send the prompt to local ollama model
     """
 
-    response = ollama.chat(
+    stream = ollama.chat(
         model=MODEL_NAME,
         messages=[
             {
                 "role": "user",
-                "content": prompt
+                "content": prompt,
             }
-        ]
+        ],
+        stream=True,
     )
-    return response["message"]["content"]
+
+    for chunk in stream:
+        text = chunk["message"]["content"]
+
+        print(
+            text,
+            end="",
+            flush=True,
+        )
 
 def answer_question(question, top_k=5):
     """
@@ -71,26 +80,27 @@ def answer_question(question, top_k=5):
         results
     )
 
-    answer = generate_answer(prompt)
-
-    return answer, results
+    return results, prompt
 
 if __name__ == "__main__":
     
     question = input("\nAsk a question:")
 
-    answer, results = answer_question(
+    results, prompt = answer_question(
         question,
-        top_k=5
+        top_k=5,
     )
 
     print("\n" + "=" * 70)
     print("ANSWER")
     print("=" * 70)
 
-    print(answer)
+    # Stream answer directly to the terminal
+    generate_answer(prompt)
 
-    print("\n" + "=" * 70)
+    print("\n")
+
+    print("=" * 70)
     print("SOURCES")
     print("=" * 70)
 
@@ -110,7 +120,6 @@ if __name__ == "__main__":
             f"{metadata['page_end']} | "
             f"distance {distance:.4f}"
         )
-
 
 
 
