@@ -46,9 +46,7 @@ def retrieve(
 
     # Search chromadb
     results = collection.query(
-        query_embeddings= [
-            query_embedding.tolist()
-        ],
+        query_embeddings= [query_embedding.tolist()],
         n_results=top_k,
     )
     return results
@@ -107,6 +105,3 @@ if __name__ == "__main__":
 
         print("\nText:")
         print(document)
-
-
-

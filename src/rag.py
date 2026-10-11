@@ -75,7 +75,7 @@ def generate_answer(prompt):
         answer_parts.append(text)
     return "".join(answer_parts)
 
-def answer_question(question, history, top_k=5):
+def retrieveChunksAndCreatePrompt(question, history, top_k=5):
     """
     Retrieve relevant chunks and build the prompt.
     """
@@ -119,19 +119,15 @@ def print_sources(results):
 
 
 def main():
-    """
-    Run a continuous question-and-answer session.
-    """
-
     history = []
 
-    print("=" * 70)
+    print("=" * 60)
     print("AI ENGINEERING BOOK ASSISTANT")
     print("Type 'exit' or 'quit' to end the session.")
-    print("=" * 70)
+    print("=" * 60)
 
     while True:
-        question = input("\nYou: ").strip()
+        question = input("\nAsk a question: ").strip()
 
         if not question:
             continue
@@ -140,13 +136,13 @@ def main():
             print("\nChat ended. Goodbye!")
             break
 
-        results, prompt = answer_question(
+        results, prompt = retrieveChunksAndCreatePrompt(
             question,
             history,
             top_k=5,
         )
 
-        print("\n\nAssistant: ", end="", flush=True)
+        print("\nAssistant: ", end="", flush=True)
 
         answer = generate_answer(prompt)
 
@@ -161,7 +157,6 @@ def main():
             "role": "assistant",
             "content": answer,
         })
-
 
 if __name__ == "__main__":
     main()
