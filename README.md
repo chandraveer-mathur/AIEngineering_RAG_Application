@@ -1,4 +1,4 @@
-# Local RAG on *AI Engineering*
+# RAG Assistant for book - *AI Engineering by Chip Huyen*
 
 A lightweight, fully local Retrieval-Augmented Generation (RAG) pipeline built around Chip Huyen’s *AI Engineering: Building Applications With Foundation Models*. The project retrieves relevant passages from the book and uses a local LLM to generate answers grounded in the retrieved context.
 
