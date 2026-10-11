@@ -2,7 +2,7 @@ import ollama
 from retrieve import retrieve
 from config import MODEL_NAME
 
-def build_prompt(question, results):
+def build_prompt(question, results, history):
     """
     Build a prompt using retrieved chunks as context.
     """
@@ -14,6 +14,11 @@ def build_prompt(question, results):
         for i, document in enumerate(documents)
     )
 
+    conversation = "\n".join(
+        f"{turn['role'].capitalize()}: {turn['content']}"
+        for turn in history
+    )
+
     prompt = f"""
     You are answering questions about the book
     "AI Engineering: Building Applications With Foundation Models"
@@ -23,26 +28,29 @@ def build_prompt(question, results):
 
     Rules:
     - Answer using the context whenever possible.
-    - If the context does not contain enough information, say so.
-    - Do not invent facts.
-    - Give a clear and concise explanation.
+    - If the context is insufficient, say so.
+    - Do not invent facts about the book.
+    - Use conversation history to understand follow-up questions.
+    - Conversation history is for context; retrieved passages are the
+    primary evidence for answers about the book.
+    - Give a clear, concise answer.
 
-    Context:
+    Conversation history:
+    {conversation if conversation else "No previous conversation."}
 
+    Retrieved context:
     {context}
 
-    Question:
-
+    Current question:
     {question}
 
     Answer:
     """
-
     return prompt
 
 def generate_answer(prompt):
     """
-    Send the prompt to local ollama model
+    Stream the response from Ollama and return the complete answer.
     """
 
     stream = ollama.chat(
@@ -55,19 +63,21 @@ def generate_answer(prompt):
         ],
         stream=True,
     )
+    answer_parts = []
 
     for chunk in stream:
         text = chunk["message"]["content"]
-
         print(
             text,
             end="",
             flush=True,
         )
+        answer_parts.append(text)
+    return "".join(answer_parts)
 
-def answer_question(question, top_k=5):
+def answer_question(question, history, top_k=5):
     """
-    Retriene relavant chunks and generate an answer
+    Retrieve relevant chunks and build the prompt.
     """
 
     results = retrieve(
@@ -76,42 +86,28 @@ def answer_question(question, top_k=5):
     )
 
     prompt = build_prompt(
-        question, 
-        results
+        question,
+        results,
+        history,
     )
 
     return results, prompt
 
-if __name__ == "__main__":
-    
-    question = input("\nAsk a question:")
 
-    results, prompt = answer_question(
-        question,
-        top_k=5,
-    )
-
-    print("\n" + "=" * 70)
-    print("ANSWER")
-    print("=" * 70)
-
-    # Stream answer directly to the terminal
-    generate_answer(prompt)
-
-    print("\n")
-
-    print("=" * 70)
-    print("SOURCES")
-    print("=" * 70)
+def print_sources(results):
+    """Display the sources retrieved for the current question."""
 
     metadatas = results["metadatas"][0]
     distances = results["distances"][0]
+
+    print("\n\n" + "=" * 70)
+    print("SOURCES")
+    print("=" * 70)
 
     for i, (metadata, distance) in enumerate(
         zip(metadatas, distances),
         start=1,
     ):
-
         print(
             f"{i}. "
             f"{metadata['chapter']} | "
@@ -122,4 +118,50 @@ if __name__ == "__main__":
         )
 
 
+def main():
+    """
+    Run a continuous question-and-answer session.
+    """
 
+    history = []
+
+    print("=" * 70)
+    print("AI ENGINEERING BOOK ASSISTANT")
+    print("Type 'exit' or 'quit' to end the session.")
+    print("=" * 70)
+
+    while True:
+        question = input("\nYou: ").strip()
+
+        if not question:
+            continue
+
+        if question.lower() in {"exit", "quit"}:
+            print("\nChat ended. Goodbye!")
+            break
+
+        results, prompt = answer_question(
+            question,
+            history,
+            top_k=5,
+        )
+
+        print("\n\nAssistant: ", end="", flush=True)
+
+        answer = generate_answer(prompt)
+
+        print_sources(results)
+
+        # Save this exchange for future follow-up questions.
+        history.append({
+            "role": "user",
+            "content": question,
+        })
+        history.append({
+            "role": "assistant",
+            "content": answer,
+        })
+
+
+if __name__ == "__main__":
+    main()
